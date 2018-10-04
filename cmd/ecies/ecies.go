@@ -19,12 +19,12 @@ func main() {
 
 	app := cli.NewApp()
 	app.Name = "ECIES"
-	app.Usage = "Let's you encrypt and decrypt message using ECIES algorithm!"
+	app.Usage = "Let's encrypt and decrypt messages using ECIES algorithm!"
 
 	app.Commands = []cli.Command{
 		{
-			Name:  "generate-key",
-			Usage: "Generate private key",
+			Name:  "generate-keys",
+			Usage: "Generate private and public keys",
 			Action: func(c *cli.Context) (err error) {
 
 				key, _ := ecies.GenerateKey(rand.Reader, elliptic.P256(), nil)
