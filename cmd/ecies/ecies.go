@@ -2,8 +2,10 @@ package main
 
 import (
 	"bufio"
+	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/x509"
 	"encoding/hex"
 	"fmt"
 	"log"
@@ -27,19 +29,19 @@ func main() {
 			Usage: "Generate private key",
 			Action: func(c *cli.Context) (err error) {
 
-				key, _ := ecies.GenerateKey(rand.Reader, elliptic.P256(), nil)
-				pv, err := ecies.MarshalPrivate(key)
+				key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+				pv, err := x509.MarshalECPrivateKey(key)
 				if err != nil {
 					return err
 				}
-				fmt.Printf("Private key: %s\n", hex.EncodeToString(pv))
+				fmt.Printf("Private key: %s\n\n", hex.EncodeToString(pv))
 
-				pub, err := ecies.MarshalPublic(&key.PublicKey)
+				pub, err := x509.MarshalPKIXPublicKey(key.Public())
 				if err != nil {
 					return err
 				}
 
-				fmt.Printf("Public key %s\n", hex.EncodeToString(pub))
+				fmt.Printf("Public key: %s\n", hex.EncodeToString(pub))
 
 				return nil
 			},
@@ -68,18 +70,21 @@ func main() {
 					return err
 				}
 
-				pub, err := ecies.UnmarshalPublic(pubBytes)
+				pub, err := x509.ParsePKIXPublicKey(pubBytes)
 				if err != nil {
 					return err
 				}
 
-				cipherText, err := ecies.Encrypt(rand.Reader, pub, msg, nil, nil)
+				ecdsaPublic := pub.(*ecdsa.PublicKey)
+				pubKey := ecies.ImportECDSAPublic(ecdsaPublic)
+
+				cipherText, err := ecies.Encrypt(rand.Reader, pubKey, msg, nil, nil)
 				if err != nil {
 					return err
 				}
 
 				fmt.Print("Encrypted message: ")
-				fmt.Printf("%s\n", hex.EncodeToString(cipherText))
+				fmt.Printf("\n%s\n", hex.EncodeToString(cipherText))
 				return nil
 			},
 		},
@@ -112,12 +117,13 @@ func main() {
 					return err
 				}
 
-				pv, err := ecies.UnmarshalPrivate(pvBytes)
+				pv, err := x509.ParseECPrivateKey(pvBytes)
 				if err != nil {
 					return err
 				}
 
-				message, err := pv.Decrypt(cipherHex, nil, nil)
+				eciesPv := ecies.ImportECDSA(pv)
+				message, err := eciesPv.Decrypt(cipherHex, nil, nil)
 				if err != nil {
 					return err
 				}
