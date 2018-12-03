@@ -58,6 +58,7 @@ func main() {
 				if err != nil {
 					return err
 				}
+				msgClean := strings.Trim(string(msg), "\n")
 
 				fmt.Print("Enter your public key: ")
 				pbKeyHex, err := reader.ReadString('\n')
@@ -78,7 +79,7 @@ func main() {
 				ecdsaPublic := pub.(*ecdsa.PublicKey)
 				pubKey := ecies.ImportECDSAPublic(ecdsaPublic)
 
-				cipherText, err := ecies.Encrypt(rand.Reader, pubKey, msg, nil, nil)
+				cipherText, err := ecies.Encrypt(rand.Reader, pubKey, []byte(msgClean), nil, nil)
 				if err != nil {
 					return err
 				}
